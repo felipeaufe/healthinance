@@ -63,7 +63,7 @@ export async function createConnectToken(clientUserId?: string): Promise<string>
 }
 
 
-export async function syncItemData(itemId: string, userId: string): Promise<void> {
+export async function syncItemData(itemId: string, userId: string): Promise<{ itemId: string; status: string }> {
   const client = getPluggyClient();
   const db = createDbClient();
 
@@ -142,4 +142,7 @@ export async function syncItemData(itemId: string, userId: string): Promise<void
       console.error(`Erro ao sincronizar transações para a conta ${acc.id}:`, txError);
     }
   }
+
+  return { itemId: item.id, status: item.status };
 }
+

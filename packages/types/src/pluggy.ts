@@ -66,3 +66,21 @@ export const TransactionDTOSchema = z.object({
   status: z.string().optional().nullable(),
 });
 export type TransactionDTO = z.infer<typeof TransactionDTOSchema>;
+
+export const SyncItemParamsSchema = z.object({
+  id: z.string().min(1, 'Item ID é obrigatório'),
+});
+export type SyncItemParams = z.infer<typeof SyncItemParamsSchema>;
+
+export const SyncItemResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  data: z
+    .object({
+      itemId: z.string(),
+      status: z.string().optional(),
+    })
+    .optional(),
+  error: z.string().optional(),
+});
+export type SyncItemResponse = z.infer<typeof SyncItemResponseSchema>;

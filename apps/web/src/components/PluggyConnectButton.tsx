@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Landmark, Loader2 } from 'lucide-react';
 import { apiFetch } from '../lib/api';
 
@@ -19,7 +20,9 @@ export function PluggyConnectButton({
   onSuccess,
   onError,
 }: PluggyConnectButtonProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const loadPluggyScript = (): Promise<void> => {
@@ -68,22 +71,41 @@ export function PluggyConnectButton({
       // 3. Inicializa o widget seguro do Pluggy Connect
       const pluggyConnect = new window.PluggyConnect({
         connectToken,
-        onSuccess: (data: { item: { id: string } }) => {
-          setLoading(false);
-          onSuccess?.(data);
+        onSuccess: async (data: { item: { id: string } }) => {
+          try {
+            setSyncing(true);
+            // Sincroniza imediatamente o item recém-conectado e suas contas
+            const syncRes = await apiFetch(`/api/pluggy/items/${data.item.id}/sync`, {
+              method: 'POST',
+            });
+
+            if (!syncRes.success) {
+              console.warn('Aviso na sincronização pós-conexão:', syncRes.error || syncRes.message);
+            }
+          } catch (syncErr) {
+            console.error('Falha ao sincronizar contas pós-conexão:', syncErr);
+          } finally {
+            setSyncing(false);
+            setLoading(false);
+            router.refresh();
+            onSuccess?.(data);
+          }
         },
         onError: (err: unknown) => {
           setLoading(false);
+          setSyncing(false);
           onError?.(err);
         },
         onClose: () => {
           setLoading(false);
+          setSyncing(false);
         },
       });
 
       pluggyConnect.init();
     } catch (err: unknown) {
       setLoading(false);
+      setSyncing(false);
       const msg = err instanceof Error ? err.message : 'Erro ao inicializar conexão bancária';
       setErrorMsg(msg);
       onError?.(err);
@@ -94,10 +116,15 @@ export function PluggyConnectButton({
     <div className="flex flex-col items-center gap-2">
       <button
         onClick={handleOpenConnect}
-        disabled={loading}
+        disabled={loading || syncing}
         className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-green-600 hover:bg-green-500 active:scale-[0.98] transition-all shadow-lg shadow-green-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? (
+        {syncing ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            Sincronizando dados bancários...
+          </>
+        ) : loading ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
             Conectando...
