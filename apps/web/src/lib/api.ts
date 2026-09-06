@@ -9,17 +9,23 @@ export async function apiFetch<T = unknown>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   const supabase = createClient();
-  const {
+  let {
     data: { session },
   } = await supabase.auth.getSession();
+
+  let token = session?.access_token;
+  if (!token) {
+    const { data: refreshData } = await supabase.auth.refreshSession();
+    token = refreshData?.session?.access_token;
+  }
 
   const headers = new Headers(options.headers || {});
   if (options.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
-  if (session?.access_token) {
-    headers.set('Authorization', `Bearer ${session.access_token}`);
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
   } else {
     console.warn('[apiFetch] Nenhuma sessão ativa com access_token encontrada para:', endpoint);
   }
