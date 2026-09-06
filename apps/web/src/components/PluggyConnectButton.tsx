@@ -41,10 +41,10 @@ export function PluggyConnectButton({
 
       const script = document.createElement('script');
       script.id = 'pluggy-connect-script';
-      script.src = 'https://cdn.pluggy.ai/pluggy-connect/v1/pluggy-connect.js';
+      script.src = 'https://cdn.pluggy.ai/pluggy-connect/v2.8.2/pluggy-connect.js';
       script.async = true;
       script.onload = () => resolve();
-      script.onerror = (err) => reject(err);
+      script.onerror = () => reject(new Error('Falha ao carregar o script do Pluggy Connect (CDN)'));
       document.body.appendChild(script);
     });
   };
@@ -71,6 +71,7 @@ export function PluggyConnectButton({
       // 3. Inicializa o widget seguro do Pluggy Connect
       const pluggyConnect = new window.PluggyConnect({
         connectToken,
+        includeSandbox: true,
         onSuccess: async (data: { item: { id: string } }) => {
           try {
             setSyncing(true);
