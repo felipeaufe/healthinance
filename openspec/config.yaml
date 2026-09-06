@@ -46,5 +46,6 @@ operations:
     guidance:
       - Garantir que todos os testes e builds passem antes de arquivar
       - Consolidar as especificacoes do sistema na pasta openspec/specs/
+      - Sempre utilizar a flag --yes no openspec archive para evitar bloqueios interativos
       - Apos arquivar, abrir Pull Request para a branch develop com o GitHub CLI (gh pr create)
 

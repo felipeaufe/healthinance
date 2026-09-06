@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { Landmark, Loader2 } from 'lucide-react';
+import { apiFetch } from '../lib/api';
 
 interface PluggyConnectButtonProps {
-  apiBaseUrl?: string;
   onSuccess?: (itemData: { item: { id: string } }) => void;
   onError?: (error: unknown) => void;
 }
@@ -16,7 +16,6 @@ declare global {
 }
 
 export function PluggyConnectButton({
-  apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333',
   onSuccess,
   onError,
 }: PluggyConnectButtonProps) {
@@ -55,22 +54,16 @@ export function PluggyConnectButton({
       // 1. Carrega o script do widget Pluggy Connect caso ainda não esteja em memória
       await loadPluggyScript();
 
-      // 2. Solicita o Connect Token efêmero à nossa API Fastify
-      const response = await fetch(`${apiBaseUrl}/api/pluggy/connect-token`, {
+      // 2. Solicita o Connect Token efêmero à nossa API Fastify com o JWT do Supabase
+      const res = await apiFetch<{ accessToken: string }>('/api/pluggy/connect-token', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // O token JWT do Supabase pode ser anexado aqui quando o usuário estiver autenticado
-        },
       });
 
-      const json = await response.json();
-
-      if (!response.ok || !json.data?.accessToken) {
-        throw new Error(json.error || 'Falha ao obter token do Pluggy Connect');
+      if (!res.success || !res.data?.accessToken) {
+        throw new Error(res.error || 'Falha ao obter token do Pluggy Connect');
       }
 
-      const connectToken = json.data.accessToken;
+      const connectToken = res.data.accessToken;
 
       // 3. Inicializa o widget seguro do Pluggy Connect
       const pluggyConnect = new window.PluggyConnect({
