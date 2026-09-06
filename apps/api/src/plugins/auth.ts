@@ -46,14 +46,22 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   fastify.decorate('authenticate', async (request: FastifyRequest, reply: FastifyReply) => {
     const authHeader = request.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      request.log.warn({ headers: request.headers }, 'Cabeçalho Authorization ausente ou inválido');
       return reply.status(401).send({
         statusCode: 401,
         error: 'Unauthorized',
-        message: 'Token de autenticação Supabase ausente, expirado ou inválido.',
+        message: 'Token de autenticação Supabase ausente no cabeçalho Authorization.',
       });
     }
 
     const token = authHeader.slice(7).trim();
+    if (!token) {
+      return reply.status(401).send({
+        statusCode: 401,
+        error: 'Unauthorized',
+        message: 'Token Bearer vazio no cabeçalho Authorization.',
+      });
+    }
 
     try {
       const header = decodeProtectedHeader(token);
@@ -79,11 +87,12 @@ const authPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       // Fallback para HS256 (tokens locais de teste Vitest assinados com fastify.jwt)
       await request.jwtVerify();
     } catch (err: unknown) {
-      request.log.warn({ err }, 'Falha na verificação de autenticação JWT');
+      const errMsg = err instanceof Error ? err.message : String(err);
+      request.log.warn({ err }, `Falha na verificação de autenticação JWT: ${errMsg}`);
       return reply.status(401).send({
         statusCode: 401,
         error: 'Unauthorized',
-        message: 'Token de autenticação Supabase ausente, expirado ou inválido.',
+        message: `Token de autenticação Supabase inválido ou expirado: ${errMsg}`,
       });
     }
   });

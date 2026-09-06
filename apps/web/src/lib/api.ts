@@ -20,6 +20,8 @@ export async function apiFetch<T = unknown>(
 
   if (session?.access_token) {
     headers.set('Authorization', `Bearer ${session.access_token}`);
+  } else {
+    console.warn('[apiFetch] Nenhuma sessão ativa com access_token encontrada para:', endpoint);
   }
 
   const url = endpoint.startsWith('http')
