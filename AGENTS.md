@@ -58,6 +58,19 @@ A estrutura técnica do projeto foi desenhada para operação em **monorepo com 
   - Payloads de Connect Token, Itens, Contas e Transações da Pluggy.
   - Respostas padronizadas de API (`ApiResponse<T>`).
 
+### 2.6. Estratégia e Ferramentas de Testes Automatizados (Vitest & Playwright)
+A validação de toda e qualquer funcionalidade desenvolvida no projeto deve ser garantida por testes automatizados:
+- **Testes Unitários e de Integração**: **Vitest** (`vitest`).
+  - Mandatório para testar schemas Zod, regras de negócio, serviços da Pluggy, rotas do Fastify e helpers de banco de dados.
+  - Execução veloz, suporte nativo a TypeScript/ESM e orquestração integrada no Turborepo (`pnpm test`).
+- **Testes End-to-End (E2E)**: **Playwright** (`@playwright/test`).
+  - Mandatório para validar os fluxos completos do usuário no frontend (`apps/web`): telas de login, cadastro, recuperação de senha, proteção de rotas no middleware e interação com o widget do Pluggy Connect.
+  - Testes em navegadores headless com cobertura de viewports desktop e mobile.
+- **Conformidade com OpenSpec**:
+  - Cada cenário observável (`#### Scenario:`) definido no `specs/<capability>/spec.md` de um change deve possuir cobertura de teste correspondente.
+  - Nenhuma mudança deve ser arquivada sem que a suíte de testes (`pnpm test` e `pnpm test:e2e`) passe com 100% de sucesso.
+
+
 ---
 
 ## 3. Regras Críticas de Segurança

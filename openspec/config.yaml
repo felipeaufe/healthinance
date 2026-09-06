@@ -8,6 +8,7 @@ context: |
     - Frontend: Next.js (App Router, Tailwind CSS, shadcn/ui, PWA, Supabase SSR Auth)
     - Backend: Fastify (TypeScript, Pluggy SDK, Webhooks, Supabase JWT Guard)
     - Database: PostgreSQL (Supabase) + Drizzle ORM
+    - Testing: Vitest (testes unitários e integração) + Playwright (testes E2E ponta a ponta)
     - Shared Packages: @healthinance/types, @healthinance/database, @healthinance/tsconfig
   Shell & Tools: fish shell, pnpm, node v24+
   Guidelines:
@@ -15,6 +16,7 @@ context: |
     - Nunca expor PLUGGY_CLIENT_ID e PLUGGY_CLIENT_SECRET no frontend.
     - Autenticação centralizada no Supabase Auth com validação de JWT no Fastify.
     - Drizzle ORM é mandatório para economia de memória (Prisma é proibido).
+    - Todo cenário de especificação deve ser coberto por testes automatizados (Vitest ou Playwright).
 
 # Per-artifact rules
 rules:
@@ -31,6 +33,7 @@ rules:
     - Detalhar decisões técnicas, trade-offs e modelos de dados com Drizzle ORM
   tasks:
     - Manter tarefas atômicas e sequenciais no formato '- [ ] X.Y'
+    - Incluir tarefas de testes (Vitest e Playwright) para validar os cenários especificados
     - Incluir tarefas de validação de build e tipagem com Turborepo
 
 # Per-operation guidance
@@ -42,10 +45,10 @@ operations:
       - Trabalhar em branch dedicada criada a partir de develop
       - Atualizar o status das tarefas em tasks.md a medida que forem concluidas
       - Validar compilacao e tipagem com pnpm turbo build
+      - Executar testes automatizados (Vitest e Playwright)
   archive:
     guidance:
-      - Garantir que todos os testes e builds passem antes de arquivar
+      - Garantir que todos os testes (Vitest e Playwright) e builds passem antes de arquivar
       - Consolidar as especificacoes do sistema na pasta openspec/specs/
       - Sempre utilizar a flag --yes no openspec archive para evitar bloqueios interativos
       - Apos arquivar, abrir Pull Request para a branch develop com o GitHub CLI (gh pr create)
-
