@@ -7,6 +7,8 @@ import {
   AuthUserSchema,
   SyncItemParamsSchema,
   SyncItemResponseSchema,
+  AccountWithConnectorSchema,
+  AccountsListResponseSchema,
 } from '../index.js';
 
 describe('Zod Schemas Unit Tests (@healthinance/types)', () => {
@@ -171,5 +173,57 @@ describe('Zod Schemas Unit Tests (@healthinance/types)', () => {
       expect(SyncItemResponseSchema.safeParse(response).success).toBe(true);
     });
   });
+
+  describe('AccountWithConnectorSchema & AccountsListResponseSchema', () => {
+    it('deve validar conta com conector bancário', () => {
+      const account = {
+        id: 'acc-uuid-1',
+        itemId: 'item-uuid-1',
+        userId: 'user-uuid-1',
+        type: 'BANK',
+        subtype: 'CHECKING_ACCOUNT',
+        name: 'Conta Corrente',
+        balance: 36180.75,
+        currencyCode: 'BRL',
+        connectorName: 'Pluggy Bank',
+      };
+
+      const result = AccountWithConnectorSchema.safeParse(account);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.connectorName).toBe('Pluggy Bank');
+        expect(result.data.balance).toBe(36180.75);
+      }
+    });
+
+    it('deve validar resposta de lista de contas com métricas consolidadas', () => {
+      const response = {
+        success: true,
+        data: {
+          accounts: [
+            {
+              id: 'acc-1',
+              itemId: 'item-1',
+              userId: 'user-1',
+              type: 'BANK',
+              name: 'Conta Corrente',
+              balance: 1000,
+              connectorName: 'Nubank',
+            },
+          ],
+          totalBalance: 1000,
+          institutionsCount: 1,
+        },
+      };
+
+      const result = AccountsListResponseSchema.safeParse(response);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.data.totalBalance).toBe(1000);
+        expect(result.data.data.institutionsCount).toBe(1);
+      }
+    });
+  });
 });
+
 
