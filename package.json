@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "build": "turbo build",
+    "test": "turbo test",
+    "test:e2e": "turbo test:e2e",
     "dev": "turbo dev",
     "lint": "turbo lint",
     "check-types": "turbo check-types",
