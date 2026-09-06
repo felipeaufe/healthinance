@@ -127,5 +127,19 @@ describe('Fastify API Integration Tests (@healthinance/api)', () => {
 
       expect(response.statusCode).toBe(401);
     });
+
+    it('não deve disparar erro 400 ao receber POST com content-type application/json e body vazio', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/pluggy/connect-token',
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
+
+      // Deve passar pelo parser sem 400 FST_ERR_CTP_EMPTY_JSON_BODY e chegar na autenticação 401
+      expect(response.statusCode).toBe(401);
+    });
   });
 });
+
