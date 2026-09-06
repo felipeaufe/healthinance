@@ -9,16 +9,29 @@ export async function apiFetch<T = unknown>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   const supabase = createClient();
-  const {
+  let {
     data: { session },
   } = await supabase.auth.getSession();
 
-  const headers = new Headers(options.headers || {});
-  headers.set('Content-Type', 'application/json');
-
-  if (session?.access_token) {
-    headers.set('Authorization', `Bearer ${session.access_token}`);
+  let token = session?.access_token;
+  if (!token) {
+    const { data: refreshData } = await supabase.auth.refreshSession();
+    token = refreshData?.session?.access_token;
   }
+
+  if (!token) {
+    return {
+      success: false,
+      error: 'Sessão expirada ou usuário não autenticado. Por favor, faça login novamente.',
+    };
+  }
+
+  const headers = new Headers(options.headers || {});
+  if (options.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  headers.set('Authorization', `Bearer ${token}`);
 
   const url = endpoint.startsWith('http')
     ? endpoint

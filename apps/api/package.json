@@ -20,6 +20,7 @@
     "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
     "fastify-plugin": "^5.0.1",
+    "jose": "^6.2.12",
     "pluggy-sdk": "^0.70.0",
     "zod": "^3.24.2"
   },

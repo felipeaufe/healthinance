@@ -12,6 +12,25 @@ export async function buildApp(): Promise<FastifyInstance> {
     logger: false, // Pode ser habilitado se necessário
   });
 
+  // Suporte resiliente a JSON vazio com cabeçalho application/json
+  app.removeContentTypeParser('application/json');
+  app.addContentTypeParser(
+    'application/json',
+    { parseAs: 'string' },
+    (_req, body, done) => {
+      const text = typeof body === 'string' ? body.trim() : '';
+      if (!text) {
+        return done(null, {});
+      }
+      try {
+        const json = JSON.parse(text);
+        done(null, json);
+      } catch (err) {
+        done(err as Error, undefined);
+      }
+    }
+  );
+
   await app.register(cors, {
     origin: true,
     credentials: true,

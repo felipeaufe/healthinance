@@ -5,6 +5,8 @@ import {
   AccountDTOSchema,
   TransactionDTOSchema,
   AuthUserSchema,
+  SyncItemParamsSchema,
+  SyncItemResponseSchema,
 } from '../index.js';
 
 describe('Zod Schemas Unit Tests (@healthinance/types)', () => {
@@ -136,4 +138,38 @@ describe('Zod Schemas Unit Tests (@healthinance/types)', () => {
       expect(AuthUserSchema.safeParse(invalidUser).success).toBe(false);
     });
   });
+
+  describe('SyncItemParamsSchema', () => {
+    it('deve validar parâmetros contendo id não vazio', () => {
+      expect(SyncItemParamsSchema.safeParse({ id: 'item-123' }).success).toBe(true);
+    });
+
+    it('deve rejeitar parâmetros com id vazio', () => {
+      expect(SyncItemParamsSchema.safeParse({ id: '' }).success).toBe(false);
+    });
+  });
+
+  describe('SyncItemResponseSchema', () => {
+    it('deve validar resposta de sucesso com itemId', () => {
+      const response = {
+        success: true,
+        message: 'Item sincronizado com sucesso',
+        data: {
+          itemId: 'item-123',
+          status: 'UPDATED',
+        },
+      };
+      expect(SyncItemResponseSchema.safeParse(response).success).toBe(true);
+    });
+
+    it('deve validar resposta de erro com mensagem', () => {
+      const response = {
+        success: false,
+        message: 'Erro na sincronização',
+        error: 'Item não encontrado na Pluggy',
+      };
+      expect(SyncItemResponseSchema.safeParse(response).success).toBe(true);
+    });
+  });
 });
+
