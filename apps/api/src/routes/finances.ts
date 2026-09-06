@@ -1,27 +1,60 @@
 import { FastifyPluginAsync } from 'fastify';
-import { createDbClient, pluggyAccounts, pluggyTransactions } from '@healthinance/database';
-import { eq, desc } from '@healthinance/database';
+import { createDbClient, pluggyAccounts, pluggyItems, pluggyTransactions, eq, desc } from '@healthinance/database';
 
 export const financeRoutes: FastifyPluginAsync = async (fastify) => {
-  // Lista contas bancárias do usuário
+  // Lista contas bancárias do usuário com dados da instituição conectada e totais consolidados
   fastify.get('/api/accounts', { preHandler: [fastify.authenticate] }, async (request, reply) => {
     const userId = request.user.sub;
     const db = createDbClient();
 
     try {
-      const accounts = await db.query.pluggyAccounts.findMany({
-        where: eq(pluggyAccounts.userId, userId),
-      });
+      const rows = await db
+        .select({
+          id: pluggyAccounts.id,
+          itemId: pluggyAccounts.itemId,
+          userId: pluggyAccounts.userId,
+          type: pluggyAccounts.type,
+          subtype: pluggyAccounts.subtype,
+          name: pluggyAccounts.name,
+          balance: pluggyAccounts.balance,
+          currencyCode: pluggyAccounts.currencyCode,
+          number: pluggyAccounts.number,
+          createdAt: pluggyAccounts.createdAt,
+          updatedAt: pluggyAccounts.updatedAt,
+          connectorName: pluggyItems.connectorName,
+          connectorId: pluggyItems.connectorId,
+        })
+        .from(pluggyAccounts)
+        .leftJoin(pluggyItems, eq(pluggyAccounts.itemId, pluggyItems.id))
+        .where(eq(pluggyAccounts.userId, userId));
+
+      const accounts = rows.map((acc) => ({
+        ...acc,
+        balance: Number(acc.balance) || 0,
+      }));
+
+      // Calcula saldo consolidado e contagem de instituições
+      const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+
+      const uniqueInstitutions = new Set(
+        rows.map((acc) => acc.connectorName).filter(Boolean)
+      );
+      const institutionsCount = uniqueInstitutions.size;
 
       return reply.send({
         success: true,
-        data: accounts,
+        data: {
+          accounts,
+          totalBalance,
+          institutionsCount,
+        },
       });
     } catch (error) {
       request.log.error(error, 'Erro ao buscar contas');
+      const message = error instanceof Error ? error.message : 'Erro ao buscar contas bancárias';
       return reply.status(500).send({
         success: false,
-        error: 'Erro ao buscar contas bancárias',
+        error: message,
       });
     }
   });
