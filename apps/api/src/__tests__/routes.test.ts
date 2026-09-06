@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+
 import { FastifyInstance } from 'fastify';
 import { buildApp } from '../app.js';
 
@@ -28,6 +29,43 @@ describe('Fastify API Integration Tests (@healthinance/api)', () => {
       expect(json.timestamp).toBeDefined();
     });
   });
+
+  describe('GET /health/connections', () => {
+    it('deve responder com o diagnóstico de conexões e campos obrigatórios', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/health/connections',
+      });
+
+      expect([200, 503]).toContain(response.statusCode);
+      const json = JSON.parse(response.payload);
+      expect(json.connections).toBeDefined();
+      expect(json.connections.database).toBeDefined();
+      expect(json.connections.pluggy).toBeDefined();
+    });
+
+    it('deve responder 503 Service Unavailable quando uma conexão falhar', async () => {
+      const dbModule = await import('@healthinance/database');
+      vi.spyOn(dbModule, 'checkDatabaseConnection').mockResolvedValueOnce({
+        ok: false,
+        latencyMs: 10,
+        error: 'Connection timeout',
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/health/connections',
+      });
+
+      expect(response.statusCode).toBe(503);
+      const json = JSON.parse(response.payload);
+      expect(json.status).toBe('degraded');
+      expect(json.connections.database.status).toBe('disconnected');
+      expect(json.connections.database.error).toBe('Connection timeout');
+    });
+  });
+
+
 
   describe('POST /api/webhooks/pluggy', () => {
     it('deve responder 200 OK e acionar background sync para evento válido', async () => {

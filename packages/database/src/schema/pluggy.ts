@@ -2,6 +2,8 @@ import { pgTable, varchar, uuid, integer, text, timestamp, numeric } from 'drizz
 import { relations } from 'drizzle-orm';
 import { users } from './users.js';
 
+
+
 export const pluggyItems = pgTable('pluggy_items', {
   id: varchar('id', { length: 128 }).primaryKey().notNull(), // itemId da Pluggy
   userId: uuid('user_id')
