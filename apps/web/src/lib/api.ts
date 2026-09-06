@@ -19,16 +19,19 @@ export async function apiFetch<T = unknown>(
     token = refreshData?.session?.access_token;
   }
 
+  if (!token) {
+    return {
+      success: false,
+      error: 'Sessão expirada ou usuário não autenticado. Por favor, faça login novamente.',
+    };
+  }
+
   const headers = new Headers(options.headers || {});
   if (options.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  } else {
-    console.warn('[apiFetch] Nenhuma sessão ativa com access_token encontrada para:', endpoint);
-  }
+  headers.set('Authorization', `Bearer ${token}`);
 
   const url = endpoint.startsWith('http')
     ? endpoint

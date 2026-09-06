@@ -32,10 +32,10 @@ test.describe('Autenticação e Proteção de Rotas (Healthinance)', () => {
     await page.goto('/register');
 
     await expect(page.locator('h1')).toContainText('Criar sua conta');
-    await page.fill('input[placeholder="Seu Nome"]', 'Usuário Teste');
-    await page.fill('input[placeholder="seu@email.com"]', 'teste@healthinance.app');
-    await page.fill('input[placeholder="••••••••"] >> nth=0', 'senha123');
-    await page.fill('input[placeholder="••••••••"] >> nth=1', 'senhaDiferente456');
+    await page.fill('#register-name', 'Usuário Teste');
+    await page.fill('#register-email', 'teste@healthinance.app');
+    await page.fill('#register-password', 'senha123');
+    await page.fill('#register-confirm-password', 'senhaDiferente456');
 
     await page.getByRole('button', { name: /Criar Conta no Healthinance/i }).click();
 

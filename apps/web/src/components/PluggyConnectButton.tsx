@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Landmark, Loader2 } from 'lucide-react';
 import { apiFetch } from '../lib/api';
+import { createClient } from '../lib/supabase/client';
 
 interface PluggyConnectButtonProps {
   onSuccess?: (itemData: { item: { id: string } }) => void;
@@ -54,6 +55,19 @@ export function PluggyConnectButton({
     setErrorMsg(null);
 
     try {
+      // 0. Verifica se o usuário possui sessão ativa antes de chamar a API
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        setLoading(false);
+        const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/dashboard';
+        router.push(`/login?redirectTo=${encodeURIComponent(currentPath)}`);
+        return;
+      }
+
       // 1. Carrega o script do widget Pluggy Connect caso ainda não esteja em memória
       await loadPluggyScript();
 
