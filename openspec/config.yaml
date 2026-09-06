@@ -1,0 +1,47 @@
+schema: spec-driven
+
+# Project context
+context: |
+  Project: Healthinance - Monorepo financeiro integrado à Pluggy API.
+  Stack:
+    - Monorepo: Turborepo + pnpm
+    - Frontend: Next.js (App Router, Tailwind CSS, shadcn/ui, PWA, Supabase SSR Auth)
+    - Backend: Fastify (TypeScript, Pluggy SDK, Webhooks, Supabase JWT Guard)
+    - Database: PostgreSQL (Supabase) + Drizzle ORM
+    - Shared Packages: @healthinance/types, @healthinance/database, @healthinance/tsconfig
+  Shell & Tools: fish shell, pnpm, node v24+
+  Guidelines:
+    - Nenhuma alteração de código ou funcionalidade deve ser feita sem um change OpenSpec aprovado.
+    - Nunca expor PLUGGY_CLIENT_ID e PLUGGY_CLIENT_SECRET no frontend.
+    - Autenticação centralizada no Supabase Auth com validação de JWT no Fastify.
+    - Drizzle ORM é mandatório para economia de memória (Prisma é proibido).
+
+# Per-artifact rules
+rules:
+  proposal:
+    - Respeitar a arquitetura do monorepo (Turborepo + pnpm, apps/web, apps/api, packages/*)
+    - Declarar explicitamente as capacidades introduzidas ou modificadas
+    - Garantir segregação de credenciais e segurança de dados bancários
+  specs:
+    - Definir requisitos observáveis com cenários claros em formato WHEN/THEN
+    - Utilizar obrigatoriamente 4 hashtags (####) para cada cenário
+    - Incluir requisitos de tratamento de erros e segurança
+  design:
+    - Considerar limites de memória (512MB RAM) e tiers gratuitos de hospedagem
+    - Detalhar decisões técnicas, trade-offs e modelos de dados com Drizzle ORM
+  tasks:
+    - Manter tarefas atômicas e sequenciais no formato '- [ ] X.Y'
+    - Incluir tarefas de validação de build e tipagem com Turborepo
+
+# Per-operation guidance
+operations:
+  apply:
+    guidance:
+      - Executar comandos exclusivamente atraves do fish shell
+      - Utilizar estritamente o pnpm como gerenciador de pacotes
+      - Atualizar o status das tarefas em tasks.md a medida que forem concluidas
+      - Validar compilacao e tipagem com pnpm turbo build
+  archive:
+    guidance:
+      - Garantir que todos os testes e builds passem antes de arquivar
+      - Consolidar as especificacoes do sistema na pasta openspec/specs/
