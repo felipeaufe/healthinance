@@ -21,9 +21,38 @@ export function getPluggyClient(): PluggyClient {
   return pluggyClientInstance;
 }
 
+export interface PluggyHealthResult {
+  ok: boolean;
+  latencyMs: number;
+  connectorsCount?: number;
+  error?: string;
+}
+
+export async function checkPluggyConnection(): Promise<PluggyHealthResult> {
+  const start = Date.now();
+  try {
+    const client = getPluggyClient();
+    const connectors = await client.fetchConnectors({ sandbox: true });
+    return {
+      ok: true,
+      latencyMs: Date.now() - start,
+      connectorsCount: connectors.results?.length ?? 0,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      latencyMs: Date.now() - start,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+
 export async function createConnectToken(clientUserId?: string): Promise<string> {
   const client = getPluggyClient();
-  const webhookUrl = process.env.PLUGGY_WEBHOOK_URL;
+  const rawWebhookUrl = process.env.PLUGGY_WEBHOOK_URL;
+  // Pluggy API exige estritamente HTTPS para URLs de webhook
+  const webhookUrl = rawWebhookUrl && rawWebhookUrl.startsWith('https://') ? rawWebhookUrl : undefined;
 
   const data = await client.createConnectToken(undefined, {
     clientUserId,
@@ -32,6 +61,7 @@ export async function createConnectToken(clientUserId?: string): Promise<string>
 
   return data.accessToken;
 }
+
 
 export async function syncItemData(itemId: string, userId: string): Promise<void> {
   const client = getPluggyClient();
