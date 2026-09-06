@@ -67,3 +67,55 @@ A estrutura técnica do projeto foi desenhada para operação em **monorepo com 
    - A chave de serviço (`service_role`) do Supabase só deve ser utilizada em tarefas administrativas seguras de backend, nunca no cliente.
 2. **Variáveis de Ambiente**:
    - Sempre fornecer `.env.example` em `apps/web` e `apps/api` documentando as chaves necessárias sem dados sensíveis reais.
+
+---
+
+## 4. Política Estrita de Versionamento e Fluxo Git (GitHub CLI)
+
+Esta política é de observância majoritária e mandatória para todo o ciclo de desenvolvimento:
+
+### 4.1. Branch Base e Criação de Branches
+- **Branch de Origem Obrigatória**: A branch base de todo o desenvolvimento é estritamente a **`develop`**. Nunca crie branches a partir da `main` ou de branches intermediárias.
+- **Isolamento de Alterações**: Toda e qualquer alteração, correção ou nova funcionalidade DEVE ser realizada em uma branch própria criada a partir da `develop`:
+  ```fish
+  fish -l -c "git checkout develop && git pull origin develop && git checkout -b feat/<nome-da-change>"
+  ```
+
+### 4.2. Preferência Absoluta pelo GitHub CLI (`gh`)
+- Todas as operações com o Git/GitHub devem priorizar ativamente o **GitHub CLI (`gh`)**.
+- O uso de comandos `git` tradicionais no terminal é secundário e restrito a operações locais (`checkout`, `commit`, `branch -d`).
+
+### 4.3. Encerramento do Fluxo OpenSpec e Abertura de PR
+- Ao concluir a implementação e arquivamento do OpenSpec, envie a branch e **abra uma Pull Request apontando para a branch `develop`**:
+  ```fish
+  fish -l -c "git push -u origin <nome-da-branch>"
+  fish -l -c "gh pr create --base develop --title 'feat: <descricao>' --body '<resumo-do-change>'"
+  ```
+
+### 4.4. Merge Estritamente sob Comando do Usuário
+- **Ação Restrita**: O agente NUNCA deve fazer o merge da Pull Request de forma autônoma.
+- O merge deve ser executado **exclusivamente sob comando explícito do usuário** (ex: *"faça o merge"*, *"pode mergear"*), aplicando o procedimento da skill `merge` ([.agent/skills/merge/SKILL.md](file:///home/felipe/Projects/meu-pluggy/healthinance/.agent/skills/merge/SKILL.md)):
+  ```fish
+  fish -l -c "gh pr merge --merge --delete-branch"
+  ```
+  *(A flag `--delete-branch` remove a branch remota no GitHub automaticamente).*
+
+### 4.5. Retorno e Limpeza de Branches Locais
+- Imediatamente após a confirmação do merge:
+  1. Retornar à branch `develop` local:
+     ```fish
+     fish -l -c "git checkout develop"
+     ```
+  2. Atualizar a `develop` local com as novas mudanças:
+     ```fish
+     fish -l -c "git pull origin develop"
+     ```
+  3. Remover a branch local que foi mergeada e tornada obsoleta:
+     ```fish
+     fish -l -c "git branch -d <nome-da-branch-local>"
+     ```
+  4. Sincronizar poda de referências remotas:
+     ```fish
+     fish -l -c "git fetch --prune"
+     ```
+

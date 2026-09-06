@@ -39,9 +39,12 @@ operations:
     guidance:
       - Executar comandos exclusivamente atraves do fish shell
       - Utilizar estritamente o pnpm como gerenciador de pacotes
+      - Trabalhar em branch dedicada criada a partir de develop
       - Atualizar o status das tarefas em tasks.md a medida que forem concluidas
       - Validar compilacao e tipagem com pnpm turbo build
   archive:
     guidance:
       - Garantir que todos os testes e builds passem antes de arquivar
       - Consolidar as especificacoes do sistema na pasta openspec/specs/
+      - Apos arquivar, abrir Pull Request para a branch develop com o GitHub CLI (gh pr create)
+
