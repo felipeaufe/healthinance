@@ -6,6 +6,7 @@ import { healthRoutes } from './routes/health.js';
 import { pluggyRoutes } from './routes/pluggy.js';
 import { webhookRoutes } from './routes/webhooks.js';
 import { financeRoutes } from './routes/finances.js';
+import { budgetsRoutes } from './routes/budgets.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -42,6 +43,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(pluggyRoutes);
   await app.register(webhookRoutes);
   await app.register(financeRoutes);
+  await app.register(budgetsRoutes);
 
   return app;
 }

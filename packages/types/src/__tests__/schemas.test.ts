@@ -13,6 +13,10 @@ import {
   TransactionsQuerySchema,
   MonthlyFinancialSummarySchema,
   TransactionsListResponseSchema,
+  CreateBudgetSchema,
+  UpdateBudgetSchema,
+  BudgetWithConsumptionSchema,
+  BudgetsListResponseSchema,
 } from '../index.js';
 
 describe('Zod Schemas Unit Tests (@healthinance/types)', () => {
@@ -313,6 +317,156 @@ describe('Zod Schemas Unit Tests (@healthinance/types)', () => {
 
       const result = TransactionsListResponseSchema.safeParse(response);
       expect(result.success).toBe(true);
+    });
+  });
+
+  describe('Budget Schemas', () => {
+    it('deve validar criação de orçamento com valores válidos', () => {
+      const validBudget = {
+        category: 'Alimentação',
+        amount: 1500.0,
+        periodMonth: 9,
+        periodYear: 2026,
+        alertPercent: 80,
+      };
+
+      const result = CreateBudgetSchema.safeParse(validBudget);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.category).toBe('Alimentação');
+        expect(result.data.amount).toBe(1500.0);
+        expect(result.data.periodMonth).toBe(9);
+        expect(result.data.periodYear).toBe(2026);
+        expect(result.data.alertPercent).toBe(80);
+      }
+    });
+
+    it('deve aplicar alertPercent padrão de 80 quando não fornecido', () => {
+      const budgetWithoutAlert = {
+        category: 'Transporte',
+        amount: 500.0,
+        periodMonth: 9,
+        periodYear: 2026,
+      };
+
+      const result = CreateBudgetSchema.safeParse(budgetWithoutAlert);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.alertPercent).toBe(80);
+      }
+    });
+
+    it('deve rejeitar criação de orçamento com valor zero ou negativo', () => {
+      const zeroBudget = {
+        category: 'Lazer',
+        amount: 0,
+        periodMonth: 9,
+        periodYear: 2026,
+      };
+
+      const negativeBudget = {
+        category: 'Lazer',
+        amount: -100,
+        periodMonth: 9,
+        periodYear: 2026,
+      };
+
+      expect(CreateBudgetSchema.safeParse(zeroBudget).success).toBe(false);
+      expect(CreateBudgetSchema.safeParse(negativeBudget).success).toBe(false);
+    });
+
+    it('deve rejeitar criação de orçamento com categoria vazia ou mês inválido', () => {
+      const invalidMonth = {
+        category: 'Saúde',
+        amount: 300,
+        periodMonth: 13,
+        periodYear: 2026,
+      };
+
+      const emptyCategory = {
+        category: '',
+        amount: 300,
+        periodMonth: 9,
+        periodYear: 2026,
+      };
+
+      expect(CreateBudgetSchema.safeParse(invalidMonth).success).toBe(false);
+      expect(CreateBudgetSchema.safeParse(emptyCategory).success).toBe(false);
+    });
+
+    it('deve validar atualização de orçamento com campos opcionais', () => {
+      const updatePayload = {
+        amount: 2000.0,
+        alertPercent: 90,
+      };
+
+      const result = UpdateBudgetSchema.safeParse(updatePayload);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.amount).toBe(2000.0);
+        expect(result.data.alertPercent).toBe(90);
+      }
+    });
+
+    it('deve validar orçamento enriquecido com consumo e Safe to Spend', () => {
+      const budgetWithConsumption = {
+        id: 'budget-uuid-1',
+        userId: 'user-uuid-1',
+        category: 'Alimentação',
+        amount: 1000.0,
+        periodMonth: 9,
+        periodYear: 2026,
+        alertPercent: 80,
+        spent: 600.0,
+        remaining: 400.0,
+        percentage: 60.0,
+        status: 'normal',
+        safeToSpendDaily: 16.67,
+        daysRemaining: 24,
+      };
+
+      const result = BudgetWithConsumptionSchema.safeParse(budgetWithConsumption);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.spent).toBe(600.0);
+        expect(result.data.remaining).toBe(400.0);
+        expect(result.data.safeToSpendDaily).toBe(16.67);
+        expect(result.data.status).toBe('normal');
+      }
+    });
+
+    it('deve validar resposta de listagem de orçamentos', () => {
+      const listResponse = {
+        success: true,
+        data: {
+          budgets: [
+            {
+              id: 'budget-1',
+              userId: 'user-1',
+              category: 'Alimentação',
+              amount: 1000.0,
+              periodMonth: 9,
+              periodYear: 2026,
+              alertPercent: 80,
+              spent: 950.0,
+              remaining: 50.0,
+              percentage: 95.0,
+              status: 'exceeded',
+              safeToSpendDaily: 2.08,
+              daysRemaining: 24,
+            },
+          ],
+          totalBudgeted: 1000.0,
+          totalSpent: 950.0,
+        },
+      };
+
+      const result = BudgetsListResponseSchema.safeParse(listResponse);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.data.totalBudgeted).toBe(1000.0);
+        expect(result.data.data.totalSpent).toBe(950.0);
+      }
     });
   });
 });

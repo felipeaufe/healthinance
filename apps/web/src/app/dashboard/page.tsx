@@ -3,8 +3,10 @@ import { redirect } from 'next/navigation';
 import { createClient } from '../../lib/supabase/server';
 import { getUserAccounts } from '../../lib/server/accounts';
 import { getUserTransactions } from '../../lib/server/transactions';
+import { getUserBudgets } from '../../lib/server/budgets';
 import { UserNav } from '../../components/UserNav';
 import { PluggyConnectButton } from '../../components/PluggyConnectButton';
+import { BudgetsSection } from '../../components/BudgetsSection';
 import {
   Landmark,
   TrendingUp,
@@ -35,6 +37,7 @@ export default async function DashboardPage() {
 
   const { accounts, totalBalance, institutionsCount } = await getUserAccounts(user.id);
   const { transactions, summary } = await getUserTransactions(user.id, 20);
+  const { budgets, totalBudgeted, totalSpent } = await getUserBudgets(user.id);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -191,6 +194,13 @@ export default async function DashboardPage() {
             </span>
           </div>
         </section>
+
+        {/* Orçamentos & Limites de Gastos (Safe to Spend) */}
+        <BudgetsSection
+          initialBudgets={budgets}
+          totalBudgeted={totalBudgeted}
+          totalSpent={totalSpent}
+        />
 
         {/* Minhas Contas Bancárias */}
         <section className="space-y-4">
