@@ -2,6 +2,7 @@ import React from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '../../lib/supabase/server';
 import { getUserAccounts } from '../../lib/server/accounts';
+import { getUserTransactions } from '../../lib/server/transactions';
 import { UserNav } from '../../components/UserNav';
 import { PluggyConnectButton } from '../../components/PluggyConnectButton';
 import {
@@ -13,6 +14,9 @@ import {
   CreditCard,
   Building2,
   CheckCircle2,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Receipt,
 } from 'lucide-react';
 
 export default async function DashboardPage() {
@@ -30,12 +34,21 @@ export default async function DashboardPage() {
   const userEmail = user.email || 'Usuário';
 
   const { accounts, totalBalance, institutionsCount } = await getUserAccounts(user.id);
+  const { transactions, summary } = await getUserTransactions(user.id, 20);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
     }).format(val);
+  };
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(new Date(date));
   };
 
   const getAccountTypeLabel = (type: string, subtype?: string | null) => {
@@ -130,6 +143,55 @@ export default async function DashboardPage() {
           </div>
         </section>
 
+        {/* Indicadores do Mês */}
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4" data-testid="monthly-summary-section">
+          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 text-xs font-medium uppercase tracking-wider">
+              <span>Receitas do Mês</span>
+              <ArrowDownLeft className="w-4 h-4 text-emerald-500" />
+            </div>
+            <p className="text-xl font-bold mt-2 text-emerald-600 dark:text-emerald-400" data-testid="monthly-income">
+              {formatCurrency(summary.monthlyIncome)}
+            </p>
+            <span className="text-xs text-slate-400 mt-1 inline-block">
+              {summary.transactionsCount > 0 ? 'Entradas registradas' : 'Sem receitas no mês'}
+            </span>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 text-xs font-medium uppercase tracking-wider">
+              <span>Despesas do Mês</span>
+              <ArrowUpRight className="w-4 h-4 text-red-500" />
+            </div>
+            <p className="text-xl font-bold mt-2 text-red-600 dark:text-red-400" data-testid="monthly-expenses">
+              {formatCurrency(summary.monthlyExpenses)}
+            </p>
+            <span className="text-xs text-slate-400 mt-1 inline-block">
+              {summary.transactionsCount > 0 ? 'Saídas e pagamentos' : 'Sem despesas no mês'}
+            </span>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 text-xs font-medium uppercase tracking-wider">
+              <span>Resultado Líquido</span>
+              <TrendingUp className={`w-4 h-4 ${summary.netBalance >= 0 ? 'text-emerald-500' : 'text-red-500'}`} />
+            </div>
+            <p
+              className={`text-xl font-bold mt-2 ${
+                summary.netBalance >= 0
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-red-600 dark:text-red-400'
+              }`}
+              data-testid="monthly-net-balance"
+            >
+              {formatCurrency(summary.netBalance)}
+            </p>
+            <span className="text-xs text-slate-400 mt-1 inline-block">
+              {summary.netBalance >= 0 ? 'Superávit no período' : 'Déficit no período'}
+            </span>
+          </div>
+        </section>
+
         {/* Minhas Contas Bancárias */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
@@ -213,17 +275,100 @@ export default async function DashboardPage() {
           )}
         </section>
 
-        {/* Empty State Transações */}
-        <section className="p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-green-500/10 text-green-600 dark:text-green-400 flex items-center justify-center mx-auto">
-            <TrendingUp className="w-6 h-6" />
+        {/* Extrato de Transações */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Receipt className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <h2 className="text-lg font-bold tracking-tight">Extrato de Transações</h2>
+            </div>
+            {transactions.length > 0 && (
+              <span className="text-xs text-slate-500 font-medium">
+                {transactions.length} transações recentes
+              </span>
+            )}
           </div>
-          <h2 className="text-lg font-bold">Extrato de Transações</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-            {accounts.length > 0
-              ? 'Suas contas estão sincronizadas. As transações recentes serão exibidas no extrato à medida que forem movimentadas.'
-              : 'Para ver o extrato unificado de suas contas e despesas, conecte seu primeiro banco com o Pluggy Connect.'}
-          </p>
+
+          {transactions.length > 0 ? (
+            <div
+              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm divide-y divide-slate-100 dark:divide-slate-800/60 overflow-hidden"
+              data-testid="transactions-feed"
+            >
+              {transactions.map((tx) => {
+                const isIncome = tx.type === 'CREDIT' || tx.amount > 0;
+                return (
+                  <div
+                    key={tx.id}
+                    data-testid={`transaction-item-${tx.id}`}
+                    className="p-4 sm:px-6 flex items-center justify-between hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          isIncome
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-red-500/10 text-red-600 dark:text-red-400'
+                        }`}
+                      >
+                        {isIncome ? (
+                          <ArrowDownLeft className="w-5 h-5" />
+                        ) : (
+                          <ArrowUpRight className="w-5 h-5" />
+                        )}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                          {tx.description}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
+                          <span>{formatDate(tx.date)}</span>
+                          {tx.category && (
+                            <>
+                              <span>&bull;</span>
+                              <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium text-[11px]">
+                                {tx.category}
+                              </span>
+                            </>
+                          )}
+                          {tx.bankName && (
+                            <>
+                              <span className="hidden sm:inline">&bull;</span>
+                              <span className="hidden sm:inline text-slate-500">{tx.bankName}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0 ml-4">
+                      <span
+                        className={`font-bold text-sm sm:text-base ${
+                          isIncome
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-red-600 dark:text-red-400'
+                        }`}
+                      >
+                        {isIncome ? '+' : '-'} {formatCurrency(Math.abs(tx.amount))}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-green-500/10 text-green-600 dark:text-green-400 flex items-center justify-center mx-auto">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold">Nenhuma transação registrada</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                {accounts.length > 0
+                  ? 'Suas contas estão sincronizadas. As transações recentes serão exibidas no extrato à medida que forem movimentadas.'
+                  : 'Para ver o extrato unificado de suas contas e despesas, conecte seu primeiro banco com o Pluggy Connect.'}
+              </p>
+            </div>
+          )}
         </section>
       </main>
 

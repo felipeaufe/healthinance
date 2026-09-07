@@ -4,15 +4,26 @@ import { sql } from 'drizzle-orm';
 import * as schema from './schema/index.js';
 
 
+let globalClient: ReturnType<typeof postgres> | null = null;
+let globalDb: ReturnType<typeof drizzle<typeof schema>> | null = null;
+
 export function createDbClient(connectionString?: string) {
   const url = connectionString || process.env.DATABASE_URL;
   if (!url) {
     throw new Error('DATABASE_URL environment variable is required to connect to Postgres');
   }
 
-  // Desativa prepared statements para compatibilidade com o Transaction Pooler do Supabase (porta 6543)
-  const client = postgres(url, { prepare: false });
-  return drizzle(client, { schema });
+  if (connectionString) {
+    const client = postgres(connectionString, { prepare: false, max: 5 });
+    return drizzle(client, { schema });
+  }
+
+  if (!globalDb) {
+    globalClient = postgres(url, { prepare: false, max: 5 });
+    globalDb = drizzle(globalClient, { schema });
+  }
+
+  return globalDb;
 }
 
 export type Database = ReturnType<typeof createDbClient>;
