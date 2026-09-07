@@ -134,8 +134,16 @@ export async function syncItemData(itemId: string, userId: string): Promise<{ it
             type: tx.type,
             status: tx.status,
           })
-          .onConflictDoNothing({
+          .onConflictDoUpdate({
             target: pluggyTransactions.id,
+            set: {
+              description: tx.description,
+              amount: String(tx.amount),
+              date: new Date(tx.date),
+              category: tx.category,
+              type: tx.type,
+              status: tx.status,
+            },
           });
       }
     } catch (txError) {
