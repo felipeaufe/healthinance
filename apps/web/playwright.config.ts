@@ -21,10 +21,18 @@ export default defineConfig({
       use: { ...devices['Pixel 5'] },
     },
   ],
-  webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  webServer: [
+    {
+      command: 'pnpm --filter @healthinance/api dev',
+      url: 'http://localhost:3333/health',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+    },
+    {
+      command: 'pnpm dev',
+      url: 'http://localhost:3000',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+    },
+  ],
 });
